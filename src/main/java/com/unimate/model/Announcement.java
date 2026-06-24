@@ -9,10 +9,12 @@ import java.time.LocalDate;
 import java.util.Set;
 
 @Entity
+@Table(name = "announcement")
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 public class Announcement {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -20,21 +22,24 @@ public class Announcement {
     @Column(nullable = false)
     private String title;
 
+    @Lob
     @Column(nullable = false)
     private String content;
 
     @Column(nullable = false)
     private LocalDate date;
 
-    private Integer eventID;
+    private LocalDate expiryDate;
 
-    @ElementCollection
-    private Set<Integer> batchIDs;
+    @ManyToOne
+    @JoinColumn(name = "created_by_id", nullable = false)
+    private User createdBy;
 
-    @ElementCollection
-    private Set<Integer> studentIDs;
+    @ManyToMany
+    @JoinTable(name = "announcement_batch", joinColumns = @JoinColumn(name = "announcement_id"), inverseJoinColumns = @JoinColumn(name = "batch_id"))
+    private Set<Batch> targetBatches;
 
-    @Column(nullable = false)
-    private Integer teacherID;
-
+    @ManyToMany
+    @JoinTable(name = "announcement_student", joinColumns = @JoinColumn(name = "announcement_id"), inverseJoinColumns = @JoinColumn(name = "student_id"))
+    private Set<Student> targetStudents;
 }

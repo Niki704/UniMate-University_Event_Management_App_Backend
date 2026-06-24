@@ -1,34 +1,30 @@
 package com.unimate.model;
 
+import com.unimate.enums.Department;
 import jakarta.persistence.*;
-import com.unimate.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 @Entity
+@Table(name = "lecturer")
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class Lecturer {
-    @Id
-    private int id;
-
-    @Column(nullable = false, unique = true)
-    private String username;
-
-    @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false, unique = true)
-    private String email;
+public class Lecturer extends User {
 
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Department department;
 
-    @Column(unique = true)
-    private String contact;
+    @ManyToMany
+    @JoinTable(name = "lecturer_batch", joinColumns = @JoinColumn(name = "lecturer_id"), inverseJoinColumns = @JoinColumn(name = "batch_id"))
+    private Set<Batch> batches;
 
-    @Column()
-    private String department;
+    @ManyToOne
+    @JoinColumn(name = "verified_by_id")
+    private Admin verifiedBy;
 }

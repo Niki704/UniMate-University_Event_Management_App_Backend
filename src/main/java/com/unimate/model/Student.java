@@ -1,38 +1,29 @@
 package com.unimate.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import com.unimate.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "student")
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class Student {
-    @Id
-    private int id;
+public class Student extends User {
 
-    @Column(nullable = false, unique = true)
-    private String username;
+    private Integer enrollmentYear;
 
-    @Column(nullable = false)
-    private String password;
+    @ManyToOne
+    @JoinColumn(name = "batch_id")
+    private Batch batch;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Column(unique = true)
+    private String studentIdNumber;
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
-
-    @Column(nullable = false)
-    @Min(1900)
-    @Max(2025)
-    private int enrollmentYear;
-
-    @Column(nullable = false)
-    private String batchID;
+    @ManyToOne
+    @JoinColumn(name = "verified_by_id")
+    private Admin verifiedBy;
 }

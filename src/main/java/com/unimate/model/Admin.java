@@ -1,29 +1,17 @@
 package com.unimate.model;
 
-import jakarta.persistence.*;
-import com.unimate.enums.Role;
-import lombok.AllArgsConstructor;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "admin")
 @NoArgsConstructor
-@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class Admin {
-    @Id
-    private int id;
-
-    @Column(nullable = false, unique = true)
-    private String username;
-
-    @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    @Enumerated(EnumType.STRING)
-    private Role role;
-
+public class Admin extends User {
+    // No role-specific attributes beyond base User at this time.
+    // See SCHEMA_DECISIONS.md Section 5 — Admin table.
 }

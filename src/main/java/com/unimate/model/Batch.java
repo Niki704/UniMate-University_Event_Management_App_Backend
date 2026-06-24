@@ -1,35 +1,43 @@
 package com.unimate.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
+import com.unimate.enums.BatchType;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 @Entity
+@Table(name = "batch")
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 public class Batch {
+
     @Id
-    private String batchId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
     @Column(nullable = false, unique = true)
-    private String batchName;
+    private String batchCode;
 
-    @Min(value = 1900)
-    @Max(value = 2100)
-    private int startYear;
+    @Column(nullable = false)
+    private String name;
 
-    @Min(value = 1900)
-    @Max(value = 2100)
-    private int endYear;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BatchType batchType;
 
-    @NotNull
-    @Column(length = 50)
-    private String userId;
+    @Column(nullable = false)
+    private Integer startYear;
+
+    @Column(nullable = false)
+    private Integer endYear;
+
+    @ManyToMany(mappedBy = "batches")
+    private Set<Lecturer> lecturers;
+
+    @OneToMany(mappedBy = "batch")
+    private Set<Student> students;
 }

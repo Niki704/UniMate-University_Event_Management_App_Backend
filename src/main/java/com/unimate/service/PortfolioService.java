@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @Transactional
@@ -24,8 +24,8 @@ public class PortfolioService {
     public PortfolioResponseDTO savePortfolio(PortfolioRequestDTO portfolioRequestDTO) {
         Portfolio portfolio = modelMapper.map(portfolioRequestDTO, Portfolio.class);
 
-        portfolio.setCreatedDate(LocalDate.now());
-        portfolio.setLastUpdated(LocalDate.now());
+        portfolio.setCreatedDate(LocalDateTime.now());
+        portfolio.setLastUpdated(LocalDateTime.now());
 
         Portfolio savedPortfolio = portfolioRepo.save(portfolio);
         return modelMapper.map(savedPortfolio, PortfolioResponseDTO.class);
@@ -42,7 +42,7 @@ public class PortfolioService {
                 .orElseThrow(() -> new RuntimeException("Portfolio with User ID " + userID + " not found"));
 
         modelMapper.map(portfolioRequestDTO, portfolio);
-        portfolio.setLastUpdated(LocalDate.now());
+        portfolio.setLastUpdated(LocalDateTime.now());
 
         Portfolio updatedPortfolio = portfolioRepo.save(portfolio);
         return modelMapper.map(updatedPortfolio, PortfolioResponseDTO.class);

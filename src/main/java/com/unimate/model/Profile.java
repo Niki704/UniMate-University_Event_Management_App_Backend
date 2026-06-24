@@ -1,29 +1,39 @@
 package com.unimate.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "profile")
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 public class Profile {
+
     @Id
-    private int userID;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
-    @Column(nullable = false)
-    private String firstName;
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
 
-    @Column(nullable = false)
-    private String lastName;
+    @Lob
+    private String bio;
 
-    @Column(nullable = false)
+    private String profilePictureUrl;
+
     private String address;
 
-    @Column(nullable = true)
-    private String bio;
+    private String githubUrl;
+
+    private String linkedinUrl;
+
+    private String facebookUrl;
+
+    private String xUrl;
+
+    private String youtubeUrl;
 }
