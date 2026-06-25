@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.util.Set;
 
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
 public class AnnouncementRequestDTO {
     @NotNull
     private String title;
@@ -21,12 +21,9 @@ public class AnnouncementRequestDTO {
     @NotNull
     private LocalDate date;
 
-    private Integer eventID;
+    private LocalDate expiryDate;
 
-    private Set<Integer> batchIDs;
+    private Set<Integer> batchIds;
 
-    private Set<Integer> studentIDs;
-
-    @NotNull
-    private Integer teacherID;
+    private Set<Integer> studentIds;
 }

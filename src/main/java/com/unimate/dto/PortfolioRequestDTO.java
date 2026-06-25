@@ -4,13 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class PortfolioRequestDTO {
-    private Integer userID;
-    private List<String> skills;
-    private List<String> attachments;
+    private Set<String> skills;
+    private Set<String> attachments;
+    private Set<String> projectLinks;
 }

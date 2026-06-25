@@ -1,5 +1,6 @@
 package com.unimate.dto;
 
+import com.unimate.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,16 +8,17 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.util.Set;
 
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
 public class AnnouncementResponseDTO {
     private Integer id;
     private String title;
     private String content;
     private LocalDate date;
-    private Integer eventID;
-    private Set<Integer> batchIDs;
-    private Set<Integer> studentIDs;
-    private Integer teacherID;
+    private LocalDate expiryDate;
+    private String createdByName;
+    private Role createdByRole;
+    private Set<String> targetBatchCodes;
+    private Set<Integer> targetStudentIds;
 }
