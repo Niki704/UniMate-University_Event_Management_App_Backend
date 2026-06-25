@@ -8,5 +8,8 @@ import java.util.List;
 
 @Repository
 public interface BatchFeedbackRepo extends JpaRepository<BatchFeedback, Integer> {
-    List<BatchFeedback> findByTeacherID(Integer teacherID);
+
+    List<BatchFeedback> findByLecturer_Id(Integer lecturerId);
+
+    List<BatchFeedback> findByBatch_Id(Integer batchId);
 }

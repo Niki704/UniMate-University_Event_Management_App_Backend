@@ -8,5 +8,8 @@ import java.util.List;
 
 @Repository
 public interface StudentFeedbackRepo extends JpaRepository<StudentFeedback, Integer> {
-    List<StudentFeedback> findByTeacherID(Integer teacherID);
+
+    List<StudentFeedback> findByLecturer_Id(Integer lecturerId);
+
+    List<StudentFeedback> findByStudent_Id(Integer studentId);
 }
