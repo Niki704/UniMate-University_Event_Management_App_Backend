@@ -1,63 +1,55 @@
 package com.unimate.service;
 
-import com.unimate.dto.AdminDTO;
+import com.unimate.dto.AdminResponseDTO;
+import com.unimate.dto.PendingApprovalsResponseDTO;
+import com.unimate.exception.ResourceNotFoundException;
 import com.unimate.model.Admin;
 import com.unimate.repo.AdminRepo;
-import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@RequiredArgsConstructor
 public class AdminService {
 
-    @Autowired
-    private AdminRepo adminRepo;
+    private final AdminRepo adminRepo;
+    private final StudentService studentService;
+    private final LecturerService lecturerService;
 
-    @Autowired
-    private ModelMapper modelMapper;
-
-    public List<AdminDTO> getAllAdmins() {
-        List<Admin>adminList = adminRepo.findAll();
-        return modelMapper.map(adminList, new TypeToken<List<AdminDTO>>() {}.getType());
-    }
-
-    public AdminDTO getAdminById(Integer Id) {
-        Admin admin = adminRepo.findAdminById(Id);
-        return modelMapper.map(admin, AdminDTO.class);
-    }
-
-    public void saveAdmin(AdminDTO adminDTO) {
-        adminRepo.save(modelMapper.map(adminDTO, Admin.class));
-    }
-
-    //Bulk add
-    public List<Admin> addBulkAdmins(List<Admin> admins) {
-        return adminRepo.saveAll(admins);
-    }
-
-    public void updateAdmin(Integer id, AdminDTO adminDTO) {
+    @Transactional(readOnly = true)
+    public AdminResponseDTO getAdminById(Integer id) {
         Admin admin = adminRepo.findById(id)
-                        .orElseThrow(() -> new RuntimeException("Admin with ID " + id + " not found"));
-
-        modelMapper.map(adminDTO, admin);
-        adminRepo.save(admin);
-//        Admin updatedAdmin = adminRepo.save(existingAdmin);
-//        modelMapper.map(updatedAdmin, AdminDTO.class);
-//        return "Admin Updated Successfully !";
+                .orElseThrow(() -> new ResourceNotFoundException("Admin not found: " + id));
+        return toResponseDTO(admin);
     }
 
-    public String deleteAdmin(AdminDTO adminDTO) {
-        adminRepo.delete(modelMapper.map(adminDTO, Admin.class));
-        return "Admin deleted";
+    @Transactional(readOnly = true)
+    public List<AdminResponseDTO> getAllAdmins() {
+        return adminRepo.findAll().stream().map(this::toResponseDTO).collect(Collectors.toList());
     }
 
-    public void deleteAdminById(Integer Id) {
-        adminRepo.deleteById(Id);
-//        return "Admin deleted Successfully !";
+    @Transactional(readOnly = true)
+    public PendingApprovalsResponseDTO getPendingApprovals() {
+        PendingApprovalsResponseDTO dto = new PendingApprovalsResponseDTO();
+        dto.setPendingStudents(studentService.getPendingStudents());
+        dto.setPendingLecturers(lecturerService.getPendingLecturers());
+        return dto;
+    }
+
+    public AdminResponseDTO toResponseDTO(Admin admin) {
+        AdminResponseDTO dto = new AdminResponseDTO();
+        dto.setId(admin.getId());
+        dto.setFirstName(admin.getFirstName());
+        dto.setLastName(admin.getLastName());
+        dto.setEmail(admin.getEmail());
+        dto.setPhoneNumber(admin.getPhoneNumber());
+        dto.setRole(admin.getRole());
+        dto.setAccountStatus(admin.getAccountStatus());
+        dto.setCreatedDate(admin.getCreatedDate());
+        return dto;
     }
 }

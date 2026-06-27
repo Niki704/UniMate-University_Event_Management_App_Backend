@@ -2,63 +2,81 @@ package com.unimate.service;
 
 import com.unimate.dto.BatchFeedbackRequestDTO;
 import com.unimate.dto.BatchFeedbackResponseDTO;
+import com.unimate.exception.ResourceNotFoundException;
+import com.unimate.exception.UnauthorizedActionException;
+import com.unimate.model.Batch;
 import com.unimate.model.BatchFeedback;
+import com.unimate.model.Lecturer;
 import com.unimate.repo.BatchFeedbackRepo;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.unimate.repo.BatchRepo;
+import com.unimate.repo.LecturerRepo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@RequiredArgsConstructor
 public class BatchFeedbackService {
 
-    @Autowired
-    private BatchFeedbackRepo batchFeedbackRepo;
+    private final BatchFeedbackRepo batchFeedbackRepo;
+    private final LecturerRepo lecturerRepo;
+    private final BatchRepo batchRepo;
 
-    @Autowired
-    private ModelMapper modelMapper;
+    @Transactional
+    public BatchFeedbackResponseDTO createFeedback(Integer lecturerId, BatchFeedbackRequestDTO dto) {
+        Lecturer lecturer = lecturerRepo.findById(lecturerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lecturer not found: " + lecturerId));
 
-    public BatchFeedbackResponseDTO saveFeedback(BatchFeedbackRequestDTO feedbackRequestDTO) {
-        BatchFeedback feedback = modelMapper.map(feedbackRequestDTO, BatchFeedback.class);
-        BatchFeedback savedFeedback = batchFeedbackRepo.save(feedback);
-        return modelMapper.map(savedFeedback, BatchFeedbackResponseDTO.class);
-    }
+        Batch batch = batchRepo.findById(dto.getBatchId())
+                .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + dto.getBatchId()));
 
-    public BatchFeedbackResponseDTO updateFeedback(Integer feedbackID, BatchFeedbackRequestDTO feedbackRequestDTO) {
-        BatchFeedback feedback = batchFeedbackRepo.findById(feedbackID)
-                .orElseThrow(() -> new RuntimeException("Feedback with ID " + feedbackID + " not found"));
+        Set<Integer> assignedBatchIds = lecturer.getBatches() == null ? Set.of()
+                : lecturer.getBatches().stream().map(Batch::getId).collect(Collectors.toSet());
 
-        modelMapper.map(feedbackRequestDTO, feedback);
-        BatchFeedback updatedFeedback = batchFeedbackRepo.save(feedback);
-        return modelMapper.map(updatedFeedback, BatchFeedbackResponseDTO.class);
-    }
-
-    public void deleteFeedback(Integer feedbackID) {
-        if (!batchFeedbackRepo.existsById(feedbackID)) {
-            throw new RuntimeException("Feedback with ID " + feedbackID + " not found");
-        }
-        batchFeedbackRepo.deleteById(feedbackID);
-    }
-
-    public BatchFeedbackResponseDTO getFeedbackById(Integer feedbackID) {
-        BatchFeedback feedback = batchFeedbackRepo.findById(feedbackID)
-                .orElseThrow(() -> new RuntimeException("Feedback with ID " + feedbackID + " not found"));
-        return modelMapper.map(feedback, BatchFeedbackResponseDTO.class);
-    }
-
-    public List<BatchFeedbackResponseDTO> getFeedbackByTeacher(Integer teacherID) {
-        List<BatchFeedback> feedbackList = batchFeedbackRepo.findByTeacherID(teacherID);
-
-        if (feedbackList.isEmpty()) {
-            throw new RuntimeException("No feedback found for Teacher ID " + teacherID);
+        if (!assignedBatchIds.contains(batch.getId())) {
+            throw new UnauthorizedActionException("You are not assigned to this batch, so you cannot give it feedback");
         }
 
-        return feedbackList.stream()
-                .map(feedback -> modelMapper.map(feedback, BatchFeedbackResponseDTO.class))
+        BatchFeedback feedback = new BatchFeedback();
+        feedback.setDate(dto.getDate());
+        feedback.setContent(dto.getContent());
+        feedback.setBadges(dto.getBadges() == null ? new HashSet<>() : dto.getBadges());
+        feedback.setLecturer(lecturer);
+        feedback.setBatch(batch);
+
+        BatchFeedback saved = batchFeedbackRepo.save(feedback);
+        return toResponseDTO(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BatchFeedbackResponseDTO> getFeedbackByBatch(Integer batchId) {
+        return batchFeedbackRepo.findByBatch_Id(batchId).stream()
+                .map(this::toResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BatchFeedbackResponseDTO> getFeedbackByLecturer(Integer lecturerId) {
+        return batchFeedbackRepo.findByLecturer_Id(lecturerId).stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public BatchFeedbackResponseDTO toResponseDTO(BatchFeedback feedback) {
+        BatchFeedbackResponseDTO dto = new BatchFeedbackResponseDTO();
+        dto.setId(feedback.getId());
+        dto.setDate(feedback.getDate());
+        dto.setContent(feedback.getContent());
+        dto.setBadges(feedback.getBadges());
+        dto.setLecturerId(feedback.getLecturer().getId());
+        dto.setLecturerName(feedback.getLecturer().getFirstName() + " " + feedback.getLecturer().getLastName());
+        dto.setBatchId(feedback.getBatch().getId());
+        dto.setBatchCode(feedback.getBatch().getBatchCode());
+        return dto;
     }
 }

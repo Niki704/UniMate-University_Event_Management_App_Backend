@@ -1,50 +1,72 @@
 package com.unimate.service;
 
-import com.unimate.dto.ProfileDTO;
+import com.unimate.dto.ProfileRequestDTO;
+import com.unimate.dto.ProfileResponseDTO;
+import com.unimate.exception.ResourceNotFoundException;
+import com.unimate.exception.UnauthorizedActionException;
 import com.unimate.model.Profile;
+import com.unimate.model.User;
 import com.unimate.repo.ProfileRepo;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.unimate.repo.UserRepo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
-@Transactional
+@RequiredArgsConstructor
 public class ProfileService {
 
-    @Autowired
-    private ProfileRepo profileRepo;
+    private final ProfileRepo profileRepo;
+    private final UserRepo userRepo;
 
-    @Autowired
-    private ModelMapper modelMapper;
-
-    public ProfileDTO getProfileById(Integer userID) {
-        Profile profile = profileRepo.findProfileById(userID)
-                .orElseThrow(() -> new RuntimeException("Profile with ID " + userID + " not found"));
-        return modelMapper.map(profile, ProfileDTO.class);
+    @Transactional(readOnly = true)
+    public ProfileResponseDTO getProfile(Integer userId) {
+        Profile profile = profileRepo.findByUser_Id(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile not found for user: " + userId));
+        return toResponseDTO(profile);
     }
 
-    public void saveProfile(ProfileDTO profileDTO) {
-        Profile profile = modelMapper.map(profileDTO, Profile.class);
-        profileRepo.save(profile);
+    @Transactional
+    public ProfileResponseDTO upsertProfile(Integer userId, Integer requesterId, ProfileRequestDTO dto) {
+        if (!userId.equals(requesterId)) {
+            throw new UnauthorizedActionException("You can only update your own profile");
+        }
+
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+
+        Profile profile = profileRepo.findByUser_Id(userId).orElseGet(() -> {
+            Profile p = new Profile();
+            p.setUser(user);
+            return p;
+        });
+
+        profile.setBio(dto.getBio());
+        profile.setProfilePictureUrl(dto.getProfilePictureUrl());
+        profile.setAddress(dto.getAddress());
+        profile.setGithubUrl(dto.getGithubUrl());
+        profile.setLinkedinUrl(dto.getLinkedinUrl());
+        profile.setFacebookUrl(dto.getFacebookUrl());
+        profile.setXUrl(dto.getXUrl());
+        profile.setYoutubeUrl(dto.getYoutubeUrl());
+
+        Profile saved = profileRepo.save(profile);
+        return toResponseDTO(saved);
     }
 
-    public List<Profile> addBulkProfiles(List<Profile> profiles) {
-        return profileRepo.saveAll(profiles);
+    public ProfileResponseDTO toResponseDTO(Profile profile) {
+        ProfileResponseDTO dto = new ProfileResponseDTO();
+        dto.setUserId(profile.getUser().getId());
+        dto.setFirstName(profile.getUser().getFirstName());
+        dto.setLastName(profile.getUser().getLastName());
+        dto.setBio(profile.getBio());
+        dto.setProfilePictureUrl(profile.getProfilePictureUrl());
+        dto.setAddress(profile.getAddress());
+        dto.setGithubUrl(profile.getGithubUrl());
+        dto.setLinkedinUrl(profile.getLinkedinUrl());
+        dto.setFacebookUrl(profile.getFacebookUrl());
+        dto.setXUrl(profile.getXUrl());
+        dto.setYoutubeUrl(profile.getYoutubeUrl());
+        return dto;
     }
-
-    public void updateProfile(Integer userID, ProfileDTO profileDTO) {
-        Profile profile = profileRepo.findById(userID)
-                .orElseThrow(() -> new RuntimeException("Profile with ID " + userID + " not found"));
-
-        modelMapper.map(profileDTO, profile);
-        profileRepo.save(profile);
-    }
-
-    // Delete profile by user ID
-//    public void deleteProfileById(Integer userID) {
-//        profileRepo.deleteById(userID);
-//    }
 }

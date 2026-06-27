@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface BatchRepo extends JpaRepository<Batch, String> {
+public interface BatchRepo extends JpaRepository<Batch, Integer> {
 
     Optional<Batch> findByBatchCode(String batchCode);
 }
