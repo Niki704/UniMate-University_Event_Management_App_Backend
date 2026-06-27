@@ -1,42 +1,36 @@
 package com.unimate.controller;
 
-import com.unimate.dto.ProfileDTO;
-import com.unimate.model.Profile;
+import com.unimate.dto.ProfileRequestDTO;
+import com.unimate.dto.ProfileResponseDTO;
+import com.unimate.security.UserPrincipal;
 import com.unimate.service.ProfileService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@CrossOrigin
-@RequestMapping(value = "api/v5/")
+@RequestMapping("/api/v1/profiles")
+@RequiredArgsConstructor
 public class ProfileController {
 
-    @Autowired
-    private ProfileService profileService;
+    private final ProfileService profileService;
 
-    @PostMapping("/profiles/add")
-    public ResponseEntity<String> saveProfile(@RequestBody ProfileDTO profileDTO) {
-        profileService.saveProfile(profileDTO);
-        return ResponseEntity.ok("Profile successfully added");
+    @GetMapping("/{userId}")
+    public ResponseEntity<ProfileResponseDTO> getProfile(@PathVariable Integer userId) {
+        return ResponseEntity.ok(profileService.getProfile(userId));
     }
 
-    @PostMapping("/profiles/bulk")
-    public ResponseEntity<List<Profile>> addBulkProfiles(@RequestBody List<Profile> profiles) {
-        List<Profile> savedProfiles = profileService.addBulkProfiles(profiles);
-        return ResponseEntity.ok(savedProfiles);
-    }
-
-    @GetMapping("/profiles/get/{userID}")
-    public ProfileDTO getProfileById(@PathVariable int userID) {
-        return profileService.getProfileById(userID);
-    }
-
-    @PutMapping("/profiles/update/{userID}")
-    public ResponseEntity<String> updateProfile(@PathVariable Integer userID, @RequestBody ProfileDTO profileDTO) {
-        profileService.updateProfile(userID, profileDTO);
-        return ResponseEntity.ok("Student Profile updated successfully");
+    @PutMapping("/{userId}")
+    public ResponseEntity<ProfileResponseDTO> upsertProfile(@PathVariable Integer userId,
+            @AuthenticationPrincipal UserPrincipal requester,
+            @Valid @RequestBody ProfileRequestDTO dto) {
+        return ResponseEntity.ok(profileService.upsertProfile(userId, requester.getId(), dto));
     }
 }

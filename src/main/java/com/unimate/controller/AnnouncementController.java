@@ -1,50 +1,60 @@
 package com.unimate.controller;
 
-import jakarta.validation.Valid;
 import com.unimate.dto.AnnouncementRequestDTO;
 import com.unimate.dto.AnnouncementResponseDTO;
+import com.unimate.security.UserPrincipal;
 import com.unimate.service.AnnouncementService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin
-@RequestMapping(value = "api/v7/announcements/")
+@RequestMapping("/api/v1/announcements")
+@RequiredArgsConstructor
 public class AnnouncementController {
 
-    @Autowired
-    private AnnouncementService announcementService;
+    private final AnnouncementService announcementService;
 
-    @PostMapping("/add")
-    public ResponseEntity<AnnouncementResponseDTO> saveAnnouncement(@RequestBody @Valid AnnouncementRequestDTO requestDTO) {
-        AnnouncementResponseDTO responseDTO = announcementService.saveAnnouncement(requestDTO);
-        return ResponseEntity.ok(responseDTO);
+    @PostMapping
+    @PreAuthorize("hasAnyRole('LECTURER','ADMIN')")
+    public ResponseEntity<AnnouncementResponseDTO> create(@AuthenticationPrincipal UserPrincipal creator,
+            @Valid @RequestBody AnnouncementRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(announcementService.createAnnouncement(creator.getId(), dto));
     }
 
-    @GetMapping("/teacher/{teacherID}")
-    public ResponseEntity<List<AnnouncementResponseDTO>> getAnnouncementsByTeacher(@PathVariable Integer teacherID) {
-        List<AnnouncementResponseDTO> responseDTOs = announcementService.getAnnouncementsByTeacher(teacherID);
-        return ResponseEntity.ok(responseDTOs);
+    @GetMapping("/{id}")
+    public ResponseEntity<AnnouncementResponseDTO> getById(@PathVariable Integer id) {
+        return ResponseEntity.ok(announcementService.getAnnouncementById(id));
     }
 
-    @GetMapping("/student/{studentID}")
-    public ResponseEntity<List<AnnouncementResponseDTO>> getAnnouncementsForStudents(@PathVariable Integer studentID) {
-        List<AnnouncementResponseDTO> responseDTOs = announcementService.getAnnouncementsForStudents(studentID);
-        return ResponseEntity.ok(responseDTOs);
+    @GetMapping
+    public ResponseEntity<List<AnnouncementResponseDTO>> getAll(
+            @RequestParam(required = false) Integer batchId) {
+
+        if (batchId != null) {
+            return ResponseEntity.ok(announcementService.getAnnouncementsByBatch(batchId));
+        }
+        return ResponseEntity.ok(announcementService.getAllAnnouncements());
     }
 
-    @GetMapping("/batch/{batchID}")
-    public ResponseEntity<List<AnnouncementResponseDTO>> getAnnouncementsForBatch(@PathVariable Integer batchID) {
-        List<AnnouncementResponseDTO> responseDTOs = announcementService.getAnnouncementsForBatch(batchID);
-        return ResponseEntity.ok(responseDTOs);
-    }
-
-    @PutMapping("/update/{id}")
-    public ResponseEntity<AnnouncementResponseDTO> updateAnnouncement(@PathVariable Integer id, @RequestBody @Valid AnnouncementRequestDTO requestDTO) {
-        AnnouncementResponseDTO responseDTO = announcementService.updateAnnouncement(id, requestDTO);
-        return ResponseEntity.ok(responseDTO);
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('LECTURER','ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Integer id, @AuthenticationPrincipal UserPrincipal requester) {
+        announcementService.deleteAnnouncement(id, requester.getId(), requester.getRole());
+        return ResponseEntity.noContent().build();
     }
 }

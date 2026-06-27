@@ -1,53 +1,79 @@
 package com.unimate.controller;
 
-import com.unimate.dto.LecturerDTO;
-import com.unimate.model.Lecturer;
+import com.unimate.dto.LecturerRegisterRequestDTO;
+import com.unimate.dto.LecturerResponseDTO;
+import com.unimate.dto.LecturerUpdateRequestDTO;
+import com.unimate.security.UserPrincipal;
 import com.unimate.service.LecturerService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin
-@RequestMapping(value = "api/v2/")
+@RequestMapping("/api/v1/lecturers")
+@RequiredArgsConstructor
 public class LecturerController {
 
-    @Autowired
-    private LecturerService lecturerService;
+    private final LecturerService lecturerService;
 
-    @GetMapping("/teachers/get")
-    public List<LecturerDTO> getAllLecturers() {
-        return lecturerService.getAllLecturers();
+    @PostMapping("/register")
+    public ResponseEntity<LecturerResponseDTO> register(@Valid @RequestBody LecturerRegisterRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(lecturerService.registerLecturer(dto));
     }
 
-    @GetMapping("/teachers/get/{Id}")
-    public LecturerDTO getLecturerById(@PathVariable int Id) {
-        return lecturerService.getLecturerById(Id);
+    @GetMapping("/{id}")
+    public ResponseEntity<LecturerResponseDTO> getById(@PathVariable Integer id) {
+        return ResponseEntity.ok(lecturerService.getLecturerById(id));
     }
 
-    @PostMapping("/teachers/add")
-    public ResponseEntity<String> saveLecturer(@RequestBody LecturerDTO lecturerDTO) {
-        lecturerService.saveLecturer(lecturerDTO);
-        return ResponseEntity.status(201).body("Teacher created successfully");
+    @GetMapping
+    public ResponseEntity<List<LecturerResponseDTO>> getAll() {
+        return ResponseEntity.ok(lecturerService.getAllLecturers());
     }
 
-    @PostMapping("/teachers/bulk")
-    public ResponseEntity<List<Lecturer>> addBulk(@RequestBody List<Lecturer> lecturers) {
-        List<Lecturer> savedLecturers = lecturerService.addBulkLecturers(lecturers);
-        return ResponseEntity.ok(savedLecturers);
+    @PatchMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<LecturerResponseDTO> approve(@PathVariable Integer id,
+            @AuthenticationPrincipal UserPrincipal admin) {
+        return ResponseEntity.ok(lecturerService.approveLecturer(id, admin.getId()));
     }
 
-    @PutMapping("/teachers/update/{id}")
-    public ResponseEntity<String> updateLecturer(@PathVariable Integer id, @RequestBody LecturerDTO lecturerDTO) {
-        lecturerService.updateLecturer(id, lecturerDTO);
-        return ResponseEntity.ok("Teacher/Consultant updated successfully");
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<LecturerResponseDTO> reject(@PathVariable Integer id) {
+        return ResponseEntity.ok(lecturerService.rejectLecturer(id));
     }
 
-    @DeleteMapping("/teachers/delete/{id}")
-    public ResponseEntity<String> deleteLecturerById(@PathVariable Integer id) {
-        lecturerService.deleteLecturerById(id);
-        return ResponseEntity.ok("Teacher/Consultant deleted successfully");
+    @PutMapping("/{id}")
+    public ResponseEntity<LecturerResponseDTO> update(@PathVariable Integer id,
+            @AuthenticationPrincipal UserPrincipal requester,
+            @Valid @RequestBody LecturerUpdateRequestDTO dto) {
+        return ResponseEntity.ok(lecturerService.updateLecturer(id, requester.getId(), requester.getRole(), dto));
+    }
+
+    @PostMapping("/{id}/batches/{batchId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<LecturerResponseDTO> assignBatch(@PathVariable Integer id, @PathVariable Integer batchId) {
+        return ResponseEntity.ok(lecturerService.assignBatch(id, batchId));
+    }
+
+    @DeleteMapping("/{id}/batches/{batchId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<LecturerResponseDTO> unassignBatch(@PathVariable Integer id, @PathVariable Integer batchId) {
+        return ResponseEntity.ok(lecturerService.unassignBatch(id, batchId));
     }
 }

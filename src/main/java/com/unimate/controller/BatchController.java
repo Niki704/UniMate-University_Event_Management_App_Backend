@@ -1,53 +1,61 @@
 package com.unimate.controller;
 
-import com.unimate.dto.BatchDTO;
-import com.unimate.model.Batch;
+import com.unimate.dto.BatchRequestDTO;
+import com.unimate.dto.BatchResponseDTO;
+import com.unimate.dto.LecturerResponseDTO;
+import com.unimate.dto.StudentResponseDTO;
 import com.unimate.service.BatchService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin
-@RequestMapping(value = "api/v4/")
+@RequestMapping("/api/v1/batches")
+@RequiredArgsConstructor
 public class BatchController {
 
-    @Autowired
-    private BatchService batchService;
+    private final BatchService batchService;
 
-    @GetMapping("/batches/get")
-    public List<BatchDTO> getAllBatches() {
-        return batchService.getAllBatches();
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BatchResponseDTO> create(@Valid @RequestBody BatchRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(batchService.createBatch(dto));
     }
 
-    @PostMapping("/batches/add")
-    public ResponseEntity<String> saveBatch(@RequestBody BatchDTO batchDTO) {
-        batchService.saveBatch(batchDTO);
-        return ResponseEntity.status(201).body("Batch created successfully");
+    @GetMapping("/{id}")
+    public ResponseEntity<BatchResponseDTO> getById(@PathVariable Integer id) {
+        return ResponseEntity.ok(batchService.getBatchById(id));
     }
 
-    @PostMapping("/batches/bulk")
-    public ResponseEntity<List<Batch>> addBulk(@RequestBody List<Batch> batches) {
-        List<Batch> savedBatches = batchService.addBulkBatches(batches);
-        return ResponseEntity.ok(savedBatches);
+    @GetMapping
+    public ResponseEntity<List<BatchResponseDTO>> getAll() {
+        return ResponseEntity.ok(batchService.getAllBatches());
     }
 
-    @PutMapping("/batches/update/{id}")
-    public ResponseEntity<String> updateBatch(@PathVariable String id, @RequestBody BatchDTO batchDTO) {
-        if (!id.matches("^B\\d+$")) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Invalid ID format. Expected format: B### (e.g., B001).");
-        }
-        batchService.updateBatch(id, batchDTO);
-        return ResponseEntity.ok("Batch updated successfully");
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BatchResponseDTO> update(@PathVariable Integer id, @Valid @RequestBody BatchRequestDTO dto) {
+        return ResponseEntity.ok(batchService.updateBatch(id, dto));
     }
 
-    @DeleteMapping("batches/delete/{id}")
-    public ResponseEntity<String> deleteBatchById(@PathVariable String id) {
-        batchService.deleteBatchById(id);
-        return ResponseEntity.ok("Batch deleted successfully");
+    @GetMapping("/{id}/students")
+    public ResponseEntity<List<StudentResponseDTO>> getStudents(@PathVariable Integer id) {
+        return ResponseEntity.ok(batchService.getStudentsOfBatch(id));
+    }
+
+    @GetMapping("/{id}/lecturers")
+    public ResponseEntity<List<LecturerResponseDTO>> getLecturers(@PathVariable Integer id) {
+        return ResponseEntity.ok(batchService.getLecturersOfBatch(id));
     }
 }

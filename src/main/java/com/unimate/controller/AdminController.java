@@ -1,58 +1,38 @@
 package com.unimate.controller;
 
-import com.unimate.dto.AdminDTO;
-import com.unimate.model.Admin;
+import com.unimate.dto.AdminResponseDTO;
+import com.unimate.dto.PendingApprovalsResponseDTO;
 import com.unimate.service.AdminService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin
-@RequestMapping(value = "api/v1/")
+@RequestMapping("/api/v1/admins")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
-    @Autowired
-    private AdminService adminService;
+    private final AdminService adminService;
 
-    @GetMapping("/admins/get")
-    public List<AdminDTO> getAllAdmins() {
-        return adminService.getAllAdmins();
+    @GetMapping("/{id}")
+    public ResponseEntity<AdminResponseDTO> getById(@PathVariable Integer id) {
+        return ResponseEntity.ok(adminService.getAdminById(id));
     }
 
-//    @GetMapping("/getadmin/{Id}")
-//    public AdminDTO getAdminById(@PathVariable int Id) {
-//        return adminService.getAdminById(Id);
-//    }
-
-    @PostMapping("/admins/add")
-    public ResponseEntity<String> saveAdmin(@RequestBody AdminDTO adminDTO) {
-        adminService.saveAdmin(adminDTO);
-        return ResponseEntity.status(201).body("Admin created successfully");
+    @GetMapping
+    public ResponseEntity<List<AdminResponseDTO>> getAll() {
+        return ResponseEntity.ok(adminService.getAllAdmins());
     }
 
-    @PostMapping("/admins/bulk")
-    public ResponseEntity<List<Admin>> addBulk(@RequestBody List<Admin> admins) {
-        List<Admin> savedAdmins = adminService.addBulkAdmins(admins);
-        return ResponseEntity.ok(savedAdmins);
-    }
-
-    @PutMapping("/admins/update/{id}")
-    public ResponseEntity<String> updateAdmin(@PathVariable Integer id, @RequestBody AdminDTO adminDTO) {
-        adminService.updateAdmin(id, adminDTO);
-        return ResponseEntity.ok("Admin updated successfully");
-    }
-
-//    @DeleteMapping("/deleteadmin")
-//    public String deleteAdmin(@RequestBody AdminDTO adminDTO) {
-//        return adminService.deleteAdmin(adminDTO);
-//    }
-
-    @DeleteMapping("/admins/delete/{id}")
-    public ResponseEntity<String> deleteAdminById(@PathVariable Integer id) {
-        adminService.deleteAdminById(id);
-        return ResponseEntity.ok("Admin deleted successfully");
+    @GetMapping("/pending-approvals")
+    public ResponseEntity<PendingApprovalsResponseDTO> getPendingApprovals() {
+        return ResponseEntity.ok(adminService.getPendingApprovals());
     }
 }
