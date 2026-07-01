@@ -72,7 +72,7 @@ public class BatchFeedbackService {
         dto.setId(feedback.getId());
         dto.setDate(feedback.getDate());
         dto.setContent(feedback.getContent());
-        dto.setBadges(feedback.getBadges());
+        dto.setBadges(new HashSet<>(feedback.getBadges())); // ← forces the lazy load NOW, inside the transaction
         dto.setLecturerId(feedback.getLecturer().getId());
         dto.setLecturerName(feedback.getLecturer().getFirstName() + " " + feedback.getLecturer().getLastName());
         dto.setBatchId(feedback.getBatch().getId());
